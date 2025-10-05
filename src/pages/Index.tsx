@@ -83,6 +83,11 @@ const Index = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const audioRef = useRef<HTMLAudioElement>(null);
   const lastMessageCount = useRef(0);
+  
+  const [showGroupSettings, setShowGroupSettings] = useState(false);
+  const [editGroupName, setEditGroupName] = useState('');
+  const [editGroupDesc, setEditGroupDesc] = useState('');
+  const [groupMembers, setGroupMembers] = useState<User[]>([]);
 
   const handleChatTypeChange = (newType: 'users' | 'groups') => {
     setChatType(newType);
@@ -226,6 +231,69 @@ const Index = () => {
       }
     } catch (error) {
       console.error('Error creating group:', error);
+    }
+  };
+
+  const loadGroupMembers = async (groupId: number) => {
+    try {
+      const response = await fetch(`${API_URLS.groups}?action=get_members&group_id=${groupId}`);
+      const data = await response.json();
+      if (data.success) {
+        setGroupMembers(data.members);
+      }
+    } catch (error) {
+      console.error('Error loading members:', error);
+    }
+  };
+
+  const openGroupSettings = (group: Group) => {
+    setEditGroupName(group.name);
+    setEditGroupDesc(group.description || '');
+    setShowGroupSettings(true);
+    loadGroupMembers(group.id);
+  };
+
+  const updateGroup = async () => {
+    if (!selectedGroup || !editGroupName.trim()) return;
+    try {
+      await fetch(API_URLS.groups, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'update',
+          group_id: selectedGroup.id,
+          name: editGroupName,
+          description: editGroupDesc,
+        }),
+      });
+      toast({
+        title: 'Группа обновлена!',
+      });
+      setShowGroupSettings(false);
+      loadGroups();
+    } catch (error) {
+      console.error('Error updating group:', error);
+    }
+  };
+
+  const removeMember = async (userId: number) => {
+    if (!selectedGroup) return;
+    try {
+      await fetch(API_URLS.groups, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'remove_member',
+          group_id: selectedGroup.id,
+          user_id: userId,
+        }),
+      });
+      toast({
+        title: 'Участник удален',
+      });
+      loadGroupMembers(selectedGroup.id);
+    } catch (error) {
+      console.error('Error removing member:', error);
     }
   };
 
@@ -676,12 +744,19 @@ const Index = () => {
                   <Icon name="Users" size={20} />
                 </AvatarFallback>
               </Avatar>
-              <div>
+              <div className="flex-1">
                 <div className="font-semibold">{selectedGroup.name}</div>
                 <div className="text-sm text-muted-foreground">
                   {selectedGroup.member_count} участников
                 </div>
               </div>
+              <Button
+                onClick={() => openGroupSettings(selectedGroup)}
+                variant="ghost"
+                size="icon"
+              >
+                <Icon name="Settings" size={20} />
+              </Button>
             </div>
 
             <ScrollArea className="flex-1 p-4">
@@ -823,6 +898,77 @@ const Index = () => {
                   Отмена
                 </Button>
               </div>
+            </div>
+          </Card>
+        </div>
+      )}
+
+      {showGroupSettings && selectedGroup && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <Card className="w-full max-w-md p-6 space-y-4 max-h-[80vh] overflow-y-auto">
+            <div className="flex items-center justify-between">
+              <h3 className="text-lg font-semibold">Настройки группы</h3>
+              <Button onClick={() => setShowGroupSettings(false)} variant="ghost" size="icon">
+                <Icon name="X" size={20} />
+              </Button>
+            </div>
+            
+            <div>
+              <label className="text-sm font-medium mb-1 block">Название</label>
+              <Input
+                placeholder="Название группы"
+                value={editGroupName}
+                onChange={(e) => setEditGroupName(e.target.value)}
+              />
+            </div>
+            
+            <div>
+              <label className="text-sm font-medium mb-1 block">Описание</label>
+              <Input
+                placeholder="О чем эта группа?"
+                value={editGroupDesc}
+                onChange={(e) => setEditGroupDesc(e.target.value)}
+              />
+            </div>
+
+            <div>
+              <label className="text-sm font-medium mb-2 block">Участники</label>
+              <ScrollArea className="h-48 border rounded-md p-2">
+                {groupMembers.map((member) => (
+                  <div
+                    key={member.id}
+                    className="p-2 rounded mb-1 flex items-center gap-2 hover:bg-muted"
+                  >
+                    <Avatar className="h-8 w-8">
+                      <AvatarImage src={member.avatar_url || undefined} />
+                      <AvatarFallback className="bg-primary/10 text-primary text-xs">
+                        {member.username[0].toUpperCase()}
+                      </AvatarFallback>
+                    </Avatar>
+                    <span className="text-sm flex-1">{member.username}</span>
+                    {member.id !== currentUser?.id && (
+                      <Button
+                        onClick={() => removeMember(member.id)}
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8"
+                      >
+                        <Icon name="UserMinus" size={16} className="text-destructive" />
+                      </Button>
+                    )}
+                  </div>
+                ))}
+              </ScrollArea>
+            </div>
+
+            <div className="flex gap-2">
+              <Button onClick={updateGroup} className="flex-1">
+                <Icon name="Check" size={16} className="mr-2" />
+                Сохранить
+              </Button>
+              <Button onClick={() => setShowGroupSettings(false)} variant="outline" className="flex-1">
+                Отмена
+              </Button>
             </div>
           </Card>
         </div>
