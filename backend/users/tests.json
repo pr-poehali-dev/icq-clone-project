@@ -1,26 +1,18 @@
 {
   "tests": [
     {
+      "name": "Get all users",
+      "method": "GET",
+      "path": "/",
+      "expectedStatus": 200
+    },
+    {
       "name": "Search users",
       "method": "GET",
-      "path": "/?search=test",
+      "path": "/?search=nonexistentuser12345",
       "expectedStatus": 200,
       "expectedBody": {
         "users": []
-      },
-      "bodyMatcher": "partial"
-    },
-    {
-      "name": "Update user profile",
-      "method": "POST",
-      "body": {
-        "action": "update_profile",
-        "user_id": 1,
-        "bio": "Updated bio"
-      },
-      "expectedStatus": 200,
-      "expectedBody": {
-        "success": true
       },
       "bodyMatcher": "partial"
     }

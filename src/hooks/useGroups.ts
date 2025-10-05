@@ -37,6 +37,7 @@ export function useGroups(currentUser: User | null) {
     if (currentUser) {
       loadGroups();
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentUser]);
 
   const createGroup = async () => {

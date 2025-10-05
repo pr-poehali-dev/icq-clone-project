@@ -95,20 +95,18 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                     UPDATE users 
                     SET avatar_url = %s, bio = %s
                     WHERE id = %s
-                    RETURNING id, username, avatar_url, bio, status
+                    RETURNING id, username, avatar_url, bio, status, is_premium, theme
                 """, (avatar_url, bio, user_id))
                 
                 user = cur.fetchone()
+                conn.commit()
                 
                 if not user:
-                    conn.commit()
                     return {
                         'statusCode': 404,
                         'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
                         'body': json.dumps({'error': 'User not found'})
                     }
-                
-                conn.commit()
                 
                 return {
                     'statusCode': 200,
@@ -120,7 +118,9 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                             'username': user[1],
                             'avatar_url': user[2],
                             'bio': user[3],
-                            'status': user[4]
+                            'status': user[4],
+                            'is_premium': user[5] if len(user) > 5 else 0,
+                            'theme': user[6] if len(user) > 6 else 'light'
                         }
                     })
                 }

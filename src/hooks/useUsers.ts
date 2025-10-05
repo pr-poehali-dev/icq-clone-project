@@ -7,14 +7,21 @@ export function useUsers(currentUser: User | null) {
   const [searchQuery, setSearchQuery] = useState('');
 
   const loadUsers = async () => {
+    if (!currentUser) return;
     try {
       const response = await fetch(
         `${API_URLS.users}${searchQuery ? `?search=${searchQuery}` : ''}`
       );
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
       const data = await response.json();
-      setUsers(data.users.filter((u: User) => u.id !== currentUser?.id));
+      if (data.users) {
+        setUsers(data.users.filter((u: User) => u.id !== currentUser?.id));
+      }
     } catch (error) {
       console.error('Error loading users:', error);
+      setUsers([]);
     }
   };
 
@@ -22,6 +29,7 @@ export function useUsers(currentUser: User | null) {
     if (currentUser) {
       loadUsers();
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentUser]);
 
   const handleSelectUser = (user: User) => {

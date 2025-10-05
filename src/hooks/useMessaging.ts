@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { API_URLS, User, Message, GroupMessage } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 
@@ -23,6 +23,7 @@ export function useMessaging(
       const interval = setInterval(loadMessages, 3000);
       return () => clearInterval(interval);
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedChat, currentUser, chatType]);
 
   useEffect(() => {
@@ -31,6 +32,7 @@ export function useMessaging(
       const interval = setInterval(loadGroupMessages, 3000);
       return () => clearInterval(interval);
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedGroup, currentUser, chatType]);
 
   const loadMessages = async () => {
