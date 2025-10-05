@@ -446,7 +446,6 @@ const Index = () => {
       />
 
       <audio ref={audioRef} />
-    </div>
 
       <CreateGroupModal
         show={showCreateGroup}
