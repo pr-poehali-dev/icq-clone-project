@@ -169,10 +169,10 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                 file_name = body_data.get('file_name')
                 
                 cur.execute("""
-                    INSERT INTO group_messages (group_id, sender_id, content, file_url, file_name)
-                    VALUES (%s, %s, %s, %s, %s)
+                    INSERT INTO group_messages (group_id, sender_id, content, file_url, file_name, voice_url, voice_duration)
+                    VALUES (%s, %s, %s, %s, %s, %s, %s)
                     RETURNING id, created_at
-                """, (group_id, sender_id, content, file_url, file_name))
+                """, (group_id, sender_id, content, file_url, file_name, body_data.get('voice_url'), body_data.get('voice_duration')))
                 
                 result = cur.fetchone()
                 conn.commit()
@@ -192,7 +192,7 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                 
                 cur.execute("""
                     SELECT gm.id, gm.sender_id, gm.content, gm.file_url, gm.file_name, 
-                           gm.created_at, u.username, u.avatar_url
+                           gm.created_at, u.username, u.avatar_url, gm.voice_url, gm.voice_duration
                     FROM group_messages gm
                     JOIN users u ON gm.sender_id = u.id
                     WHERE gm.group_id = %s
@@ -209,7 +209,9 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                         'file_name': row[4],
                         'created_at': row[5].isoformat(),
                         'sender_name': row[6],
-                        'sender_avatar': row[7]
+                        'sender_avatar': row[7],
+                        'voice_url': row[8],
+                        'voice_duration': row[9]
                     })
                 
                 return {

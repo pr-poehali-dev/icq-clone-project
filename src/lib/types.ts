@@ -4,6 +4,8 @@ export interface User {
   avatar_url: string | null;
   bio: string | null;
   status: string;
+  is_premium?: number;
+  theme?: string;
 }
 
 export interface Message {
@@ -13,6 +15,8 @@ export interface Message {
   content: string;
   file_url: string | null;
   file_name: string | null;
+  voice_url?: string;
+  voice_duration?: number;
   created_at: string;
   sender_name: string;
   sender_avatar: string | null;
@@ -33,6 +37,8 @@ export interface GroupMessage {
   content: string;
   file_url: string | null;
   file_name: string | null;
+  voice_url?: string;
+  voice_duration?: number;
   created_at: string;
   sender_name: string;
   sender_avatar: string | null;

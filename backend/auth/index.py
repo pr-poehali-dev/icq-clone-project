@@ -6,12 +6,8 @@ Returns: HTTP response with user data or error
 
 import json
 import os
-import hashlib
 import psycopg2
 from typing import Dict, Any
-
-def hash_password(password: str) -> str:
-    return hashlib.sha256(password.encode()).hexdigest()
 
 def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
     method: str = event.get('httpMethod', 'GET')
@@ -53,13 +49,12 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
     
     try:
         if action == 'register':
-            password_hash = hash_password(password)
             avatar_url = body_data.get('avatar_url', '')
             bio = body_data.get('bio', '')
             
             cur.execute(
-                "INSERT INTO users (username, password_hash, avatar_url, bio, status) VALUES (%s, %s, %s, %s, %s) RETURNING id, username, avatar_url, bio, status",
-                (username, password_hash, avatar_url, bio, 'online')
+                "INSERT INTO users (username, password, avatar_url, bio, status) VALUES (%s, %s, %s, %s, %s) RETURNING id, username, avatar_url, bio, status, is_premium, theme",
+                (username, password, avatar_url, bio, 'online')
             )
             user = cur.fetchone()
             conn.commit()
@@ -74,16 +69,17 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                         'username': user[1],
                         'avatar_url': user[2],
                         'bio': user[3],
-                        'status': user[4]
+                        'status': user[4],
+                        'is_premium': user[5],
+                        'theme': user[6]
                     }
                 })
             }
         
         elif action == 'login':
-            password_hash = hash_password(password)
             cur.execute(
-                "SELECT id, username, avatar_url, bio, status FROM users WHERE username = %s AND password_hash = %s",
-                (username, password_hash)
+                "SELECT id, username, avatar_url, bio, status, is_premium, theme FROM users WHERE username = %s AND password = %s",
+                (username, password)
             )
             user = cur.fetchone()
             
@@ -107,7 +103,9 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                         'username': user[1],
                         'avatar_url': user[2],
                         'bio': user[3],
-                        'status': 'online'
+                        'status': 'online',
+                        'is_premium': user[5],
+                        'theme': user[6]
                     }
                 })
             }

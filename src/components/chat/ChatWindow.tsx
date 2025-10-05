@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import Icon from '@/components/ui/icon';
 import { User, Group, Message, GroupMessage } from '@/lib/types';
+import VoiceMessage from '@/components/VoiceMessage';
 
 interface ChatWindowProps {
   currentUser: User;
@@ -18,6 +19,9 @@ interface ChatWindowProps {
   onFileSelect: () => void;
   uploadingFile: boolean;
   onOpenGroupSettings: (group: Group) => void;
+  onViewProfile?: (user: User) => void;
+  onStartCall?: (user: User) => void;
+  onStartVoiceRecord?: () => void;
 }
 
 const ChatWindow = ({
@@ -33,6 +37,9 @@ const ChatWindow = ({
   onFileSelect,
   uploadingFile,
   onOpenGroupSettings,
+  onViewProfile,
+  onStartCall,
+  onStartVoiceRecord,
 }: ChatWindowProps) => {
   if (!selectedChat && !selectedGroup) {
     return (
@@ -49,14 +56,19 @@ const ChatWindow = ({
     return (
       <>
         <div className="p-4 border-b bg-card flex items-center gap-3">
-          <Avatar>
+          <Avatar className="cursor-pointer" onClick={() => onViewProfile?.(selectedChat)}>
             <AvatarImage src={selectedChat.avatar_url || undefined} />
             <AvatarFallback className="bg-primary/10 text-primary">
               {selectedChat.username[0].toUpperCase()}
             </AvatarFallback>
           </Avatar>
-          <div>
-            <div className="font-semibold">{selectedChat.username}</div>
+          <div className="flex-1 cursor-pointer" onClick={() => onViewProfile?.(selectedChat)}>
+            <div className="font-semibold flex items-center gap-2">
+              {selectedChat.username}
+              {selectedChat.is_premium === 1 && (
+                <Icon name="Crown" size={14} className="text-yellow-500" />
+              )}
+            </div>
             <div className="text-sm text-muted-foreground flex items-center gap-1">
               {selectedChat.status === 'online' ? (
                 <>
@@ -68,6 +80,15 @@ const ChatWindow = ({
               )}
             </div>
           </div>
+          <div className="flex gap-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => onStartCall?.(selectedChat)}
+            >
+              <Icon name="Video" size={20} />
+            </Button>
+          </div>
         </div>
 
         <ScrollArea className="flex-1 p-4">
@@ -75,12 +96,19 @@ const ChatWindow = ({
             {messages.map((msg) => {
               const isOwn = msg.sender_id === currentUser.id;
               const hasFile = msg.file_url && msg.file_name;
+              const hasVoice = msg.voice_url && msg.voice_duration;
               const isImage = hasFile && (msg.file_name?.match(/\.(jpg|jpeg|png|gif|webp)$/i) || msg.file_url?.match(/\.(jpg|jpeg|png|gif|webp)$/i));
               
               return (
-                <div key={msg.id} className={`flex ${isOwn ? 'justify-end' : 'justify-start'}`}>
+                <div key={msg.id} className={`flex ${isOwn ? 'justify-end' : 'justify-start'} animate-in slide-in-from-bottom-2 duration-300`}>
                   <div className={`max-w-md ${isOwn ? 'bg-primary text-primary-foreground' : 'bg-muted'} rounded-2xl px-4 py-2`}>
-                    {isImage ? (
+                    {hasVoice ? (
+                      <VoiceMessage
+                        voiceUrl={msg.voice_url}
+                        duration={msg.voice_duration}
+                        isSender={isOwn}
+                      />
+                    ) : isImage ? (
                       <img src={msg.file_url || ''} alt={msg.file_name || ''} className="rounded-lg max-w-xs mb-2" />
                     ) : hasFile ? (
                       <a href={msg.file_url || ''} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 mb-2 underline">
@@ -88,7 +116,7 @@ const ChatWindow = ({
                         {msg.file_name}
                       </a>
                     ) : null}
-                    <div className="text-sm">{msg.content}</div>
+                    {!hasVoice && <div className="text-sm">{msg.content}</div>}
                     <div className={`text-xs mt-1 ${isOwn ? 'text-primary-foreground/70' : 'text-muted-foreground'}`}>
                       {new Date(msg.created_at).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })}
                     </div>
@@ -109,6 +137,14 @@ const ChatWindow = ({
               disabled={uploadingFile}
             >
               <Icon name={uploadingFile ? "Loader2" : "Paperclip"} size={20} className={uploadingFile ? "animate-spin" : ""} />
+            </Button>
+            <Button 
+              variant="outline" 
+              size="icon" 
+              className="shrink-0"
+              onClick={onStartVoiceRecord}
+            >
+              <Icon name="Mic" size={20} />
             </Button>
             <Input
               placeholder="Введите сообщение..."
@@ -199,6 +235,14 @@ const ChatWindow = ({
               disabled={uploadingFile}
             >
               <Icon name={uploadingFile ? "Loader2" : "Paperclip"} size={20} className={uploadingFile ? "animate-spin" : ""} />
+            </Button>
+            <Button 
+              variant="outline" 
+              size="icon" 
+              className="shrink-0"
+              onClick={onStartVoiceRecord}
+            >
+              <Icon name="Mic" size={20} />
             </Button>
             <Input
               placeholder="Введите сообщение..."

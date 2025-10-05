@@ -36,7 +36,7 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
             
             if search:
                 cur.execute("""
-                    SELECT id, username, avatar_url, bio, status, last_seen
+                    SELECT id, username, avatar_url, bio, status, last_seen, is_premium, theme
                     FROM users
                     WHERE username ILIKE %s
                     ORDER BY username
@@ -44,13 +44,13 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                 """, (f'%{search}%',))
             elif user_id:
                 cur.execute("""
-                    SELECT id, username, avatar_url, bio, status, last_seen
+                    SELECT id, username, avatar_url, bio, status, last_seen, is_premium, theme
                     FROM users
                     WHERE id = %s
                 """, (user_id,))
             else:
                 cur.execute("""
-                    SELECT id, username, avatar_url, bio, status, last_seen
+                    SELECT id, username, avatar_url, bio, status, last_seen, is_premium, theme
                     FROM users
                     ORDER BY last_seen DESC
                     LIMIT 50
@@ -64,7 +64,9 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                     'avatar_url': row[2],
                     'bio': row[3],
                     'status': row[4],
-                    'last_seen': row[5].isoformat() if row[5] else None
+                    'last_seen': row[5].isoformat() if row[5] else None,
+                    'is_premium': row[6] if len(row) > 6 else 0,
+                    'theme': row[7] if len(row) > 7 else 'light'
                 })
             
             return {
@@ -82,6 +84,13 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                 avatar_url = body_data.get('avatar_url')
                 bio = body_data.get('bio')
                 
+                if not user_id:
+                    return {
+                        'statusCode': 400,
+                        'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
+                        'body': json.dumps({'error': 'user_id required'})
+                    }
+                
                 cur.execute("""
                     UPDATE users 
                     SET avatar_url = %s, bio = %s
@@ -90,6 +99,15 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                 """, (avatar_url, bio, user_id))
                 
                 user = cur.fetchone()
+                
+                if not user:
+                    conn.commit()
+                    return {
+                        'statusCode': 404,
+                        'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
+                        'body': json.dumps({'error': 'User not found'})
+                    }
+                
                 conn.commit()
                 
                 return {
@@ -105,6 +123,23 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                             'status': user[4]
                         }
                     })
+                }
+            
+            elif action == 'report_user':
+                reporter_id = body_data.get('reporter_id')
+                reported_user_id = body_data.get('reported_user_id')
+                reason = body_data.get('reason', '')
+                
+                cur.execute("""
+                    INSERT INTO user_reports (reporter_id, reported_user_id, reason)
+                    VALUES (%s, %s, %s)
+                """, (reporter_id, reported_user_id, reason))
+                conn.commit()
+                
+                return {
+                    'statusCode': 200,
+                    'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
+                    'body': json.dumps({'success': True})
                 }
             
             elif action == 'update_status':

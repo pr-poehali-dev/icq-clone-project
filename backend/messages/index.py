@@ -43,7 +43,7 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
             
             cur.execute("""
                 SELECT m.id, m.sender_id, m.receiver_id, m.content, m.file_url, m.file_name, 
-                       m.is_read, m.created_at, u.username, u.avatar_url
+                       m.is_read, m.created_at, u.username, u.avatar_url, m.voice_url, m.voice_duration
                 FROM messages m
                 JOIN users u ON m.sender_id = u.id
                 WHERE (m.sender_id = %s AND m.receiver_id = %s) 
@@ -63,7 +63,9 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                     'is_read': row[6],
                     'created_at': row[7].isoformat(),
                     'sender_name': row[8],
-                    'sender_avatar': row[9]
+                    'sender_avatar': row[9],
+                    'voice_url': row[10] if len(row) > 10 else None,
+                    'voice_duration': row[11] if len(row) > 11 else None
                 })
             
             return {
@@ -82,6 +84,8 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                 content = body_data.get('content', '')
                 file_url = body_data.get('file_url')
                 file_name = body_data.get('file_name')
+                voice_url = body_data.get('voice_url')
+                voice_duration = body_data.get('voice_duration')
                 
                 if not sender_id or not receiver_id:
                     return {
@@ -91,10 +95,10 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                     }
                 
                 cur.execute("""
-                    INSERT INTO messages (sender_id, receiver_id, content, file_url, file_name)
-                    VALUES (%s, %s, %s, %s, %s)
+                    INSERT INTO messages (sender_id, receiver_id, content, file_url, file_name, voice_url, voice_duration)
+                    VALUES (%s, %s, %s, %s, %s, %s, %s)
                     RETURNING id, created_at
-                """, (sender_id, receiver_id, content, file_url, file_name))
+                """, (sender_id, receiver_id, content, file_url, file_name, voice_url, voice_duration))
                 
                 result = cur.fetchone()
                 conn.commit()
