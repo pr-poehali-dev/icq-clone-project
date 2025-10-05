@@ -1,0 +1,29 @@
+{
+  "tests": [
+    {
+      "name": "Create group",
+      "method": "POST",
+      "body": {
+        "action": "create",
+        "name": "Test Group",
+        "description": "Test description",
+        "created_by": 1
+      },
+      "expectedStatus": 200,
+      "expectedBody": {
+        "success": true
+      },
+      "bodyMatcher": "partial"
+    },
+    {
+      "name": "Get user groups",
+      "method": "GET",
+      "path": "/?user_id=1",
+      "expectedStatus": 200,
+      "expectedBody": {
+        "groups": []
+      },
+      "bodyMatcher": "partial"
+    }
+  ]
+}
