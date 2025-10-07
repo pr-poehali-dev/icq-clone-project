@@ -1,7 +1,7 @@
 {
   "tests": [
     {
-      "name": "Register new user",
+      "name": "Register existing user returns error",
       "method": "POST",
       "body": {
         "action": "register",
@@ -9,12 +9,9 @@
         "password": "test123",
         "bio": "Test user"
       },
-      "expectedStatus": 200,
+      "expectedStatus": 409,
       "expectedBody": {
-        "success": true,
-        "user": {
-          "username": "string"
-        }
+        "error": "Username already exists"
       },
       "bodyMatcher": "partial"
     },
