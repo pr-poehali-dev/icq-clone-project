@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Auth</title>
+</head>
+<body>
+    <h1>Test Auth</h1>
+    <button onclick="testAuth()">Test Login</button>
+    <div id="result"></div>
+
+    <script>
+        async function testAuth() {
+            const url = 'https://functions.poehali.dev/2a65d178-004e-4fc0-bca2-100aa5710b02';
+            console.log('Testing auth to:', url);
+            
+            try {
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        action: 'login',
+                        username: 'testuser',
+                        password: 'test123'
+                    })
+                });
+                
+                console.log('Status:', response.status);
+                const data = await response.json();
+                console.log('Data:', data);
+                
+                document.getElementById('result').innerHTML = JSON.stringify(data, null, 2);
+            } catch (error) {
+                console.error('Error:', error);
+                document.getElementById('result').innerHTML = 'Error: ' + error.message;
+            }
+        }
+    </script>
+</body>
+</html>

@@ -50,6 +50,7 @@ const AuthForm = ({ onAuthSuccess }: AuthFormProps) => {
         });
       }
     } catch (error) {
+      console.error('Auth error:', error);
       toast({
         title: 'Ошибка',
         description: 'Не удалось подключиться к серверу',
