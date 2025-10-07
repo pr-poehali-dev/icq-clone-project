@@ -19,6 +19,8 @@ const AuthForm = ({ onAuthSuccess }: AuthFormProps) => {
 
   const handleAuth = async () => {
     try {
+      console.log('Attempting auth:', { action: isLogin ? 'login' : 'register', username, url: API_URLS.auth });
+      
       const response = await fetch(API_URLS.auth, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -30,7 +32,9 @@ const AuthForm = ({ onAuthSuccess }: AuthFormProps) => {
         }),
       });
       
+      console.log('Response status:', response.status);
       const data = await response.json();
+      console.log('Response data:', data);
       
       if (data.success) {
         onAuthSuccess(data.user);
@@ -82,6 +86,19 @@ const AuthForm = ({ onAuthSuccess }: AuthFormProps) => {
             />
             <Button className="w-full" onClick={handleAuth}>
               Войти
+            </Button>
+            <Button 
+              className="w-full" 
+              variant="outline"
+              onClick={() => {
+                setUsername('testuser');
+                setPassword('test123');
+                setTimeout(() => {
+                  handleAuth();
+                }, 100);
+              }}
+            >
+              Быстрый вход (testuser)
             </Button>
           </TabsContent>
           
